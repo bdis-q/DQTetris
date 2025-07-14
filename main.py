@@ -58,8 +58,8 @@ def main(args):
 
 if __name__ == "__main__":
     args = get_args()
-    # filename = f"{args.circuit_name}_{args.qubit_count}_{args.core_count}"
-    filename = "output"
+    filename = f"{args.circuit_name}_{args.qubit_count}_{args.core_count}"
+    # filename = "output"
     original_stdout = sys.stdout
     with open(f'outputs/{filename}.txt', 'a') as f:
         sys.stdout = f

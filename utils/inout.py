@@ -47,7 +47,7 @@ def get_args():
 
 def output_results(cname, circ, qpus, distributors):
     """
-    将数据写入.xlsx文件
+    将数据写入.csv文件
     """
     headers = ["Circuit", "#Qubits", "#Depths", "#Gates", "#Modules", "Metrics"]
     metrics = ["Comm Costs", "#RGate", "#RSWAP", "Exec Time"]
