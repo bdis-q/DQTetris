@@ -21,6 +21,10 @@ def get_args():
                         help='Name of the quantum circuit (string)')
     parser.add_argument('--qubit_count', '-nq', type=int, required=True,
                         help='Number of qubits in the quantum circuit (integer)')
+    parser.add_argument('--gate_set', '-gset', type=str, required=False, default='cu1,u3',
+                        help='Comma-separated list of basis gates (string)')
+    parser.add_argument('--network', '-net', type=str, required=False, default='fc',
+                        help='Name of the network (string)')
 
     args = parser.parse_args()
 
@@ -38,11 +42,18 @@ def get_args():
         )
     args.core_capacities = core_capacities
 
+    # Validate the basis gate set
+    if not args.gate_set:
+        raise ValueError("The basis gate set must not be empty.")
+    args.gate_set = args.gate_set.split(",")
+
     print("[INFO] Configuration parameters:")
     print(f"[INFO] Number of QPUs: {args.core_count}")
     print(f"[INFO] Capacity of each QPU: {args.core_capacities}")
     print(f"[INFO] Name of the quantum circuit: {args.circuit_name}")
     print(f"[INFO] Number of qubits in the quantum circuit: {args.qubit_count}")
+    print(f"[INFO] Basis gate set: {args.gate_set}")
+    print(f"[INFO] Name of the network: {args.network}")
     return args
 
 def output_results(cname, circ, qpus, distributors):

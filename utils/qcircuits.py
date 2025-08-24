@@ -4,9 +4,7 @@ from math import *
 from qiskit import QuantumCircuit, transpile
 from qiskit.circuit.library import *
 
-basis_gates = ["cu1", "u3"]
-
-def select_circuit(name, num_qubits, num_qpus, qpus):
+def select_circuit(name, num_qubits, num_qpus, qpus, basis_gates=["cu1", "u3"]):
     assert num_qpus == len(qpus), "[ERROR] num_qpus != len(qpus)"
     
     circ = None
@@ -30,7 +28,6 @@ def select_circuit(name, num_qubits, num_qpus, qpus):
 
     # 将线路转换到basis gates
     trans_circ = transpile(circ, basis_gates=basis_gates, optimization_level=0)
-    # trans_circ = remove_single_qubit_gates(trans_circ)
     # print(trans_circ)
     # 输出线路和QPU信息
     gate_counts = trans_circ.count_ops()

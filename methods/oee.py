@@ -4,14 +4,21 @@ import copy
 import time
 from qiskit.converters import circuit_to_dag, dag_to_circuit
 from collections import defaultdict
+from methods.pytketdqc import build_fc_network, build_mesh_grid_network
 
 class OEE: # static OEE
-    def __init__(self, circ, qpus, itr=10):
+    def __init__(self, circ, qpus, itr=10, network="fc"):
         self.circ = circ
         self.qpus = qpus
         self.itr = itr
+        if network == "fc":
+            self.network, self.swap_cost_matrix = build_fc_network(self.qpus)
+        elif network == "mesh":
+            self.network, self.swap_cost_matrix = build_mesh_grid_network(self.qpus, int(len(self.qpus)/2), 2)
+        else:
+            raise ValueError("Unsupported network type. Use 'fc' for full connection or 'mesh' for mesh-grid.")
         return
-    
+
     @property
     def name(self):
         return "S-OEE"
@@ -188,8 +195,11 @@ class OEE: # static OEE
                 node_to_partition[node] = i
         cut_edges = 0
         for u, v in graph.edges(): # 遍历图中的每一条边
-            if node_to_partition[u] != node_to_partition[v]:
-                cut_edges += graph[u][v]['weight']
+            qpu_u = node_to_partition[u]
+            qpu_v = node_to_partition[v]
+            if qpu_u != qpu_v:
+                path_len = (self.swap_cost_matrix[qpu_u][qpu_v] + 1) / 2
+                cut_edges += path_len * graph[u][v]['weight']
         return cut_edges
 
     def save_path_to(self, filename="./outputs/paths/oee"):
@@ -391,7 +401,8 @@ class FGP_rOEE(OEE):
                 # 如果存在，则说明形成了环
                 # 因为每次只加一条边，所以抵消掉一条就行
                 if G.has_edge(curr_part, prev_part):
-                    communication_cost += 1 # one RSWAP
+                    communication_cost += \
+                        self.swap_cost_matrix[curr_part][prev_part] # one RSWAP
                     # 更新边权重
                     if G[curr_part][prev_part]['weight'] > 1:
                         G[curr_part][prev_part]['weight'] -= 1
@@ -414,7 +425,6 @@ class FGP_rOEE(OEE):
 
         for length in sorted(cycles_by_length.keys()):
             assert(3 <= length <= len(self.qpus))
-            cycle_cnt = 0
             for cycle in cycles_by_length[length]:
                 exist = True # 先检查是不是所有边都在
                 weight = 999999
@@ -427,7 +437,6 @@ class FGP_rOEE(OEE):
                     weight = min(weight, G[u][v]['weight']) # 记录环的个数
                 if not exist: # 当前环不存在了
                     continue
-                cycle_cnt += weight # 更新环的数量
                 for i in range(length): # 从G中移除这些环
                     u = cycle[i]
                     v = cycle[(i + 1) % length]
@@ -435,11 +444,14 @@ class FGP_rOEE(OEE):
                         G[u][v]['weight'] -= weight
                     else:
                         G.remove_edge(u, v)
-            communication_cost += (length - 1) * cycle_cnt
+                    # 对环中的每一条边，计算通信开销
+                    swap_cost = self.swap_cost_matrix[u][v]
+                    communication_cost += swap_cost * weight
 
-        # 计算剩余未形成环的边的权重总和
-        remaining_edge_weights = sum(data['weight'] for _, _, data in G.edges(data=True))
-        # 根据公式计算非本地通信开销
-        communication_cost += remaining_edge_weights
+        # 获取剩余的边
+        remaining_edges = G.edges(data=True)
+        for u, v, data in remaining_edges:
+            path_len = (self.swap_cost_matrix[u][v] + 1) / 2
+            communication_cost += path_len * data['weight']
 
         return communication_cost
