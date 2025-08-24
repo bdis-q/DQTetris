@@ -46,6 +46,8 @@ class QAutoComm:
                 gate = build_CU1_gate(qubits[0], qubits[1], angle=params[0])
             elif gate_name == "h":
                 gate = build_H_gate(qubits[0])
+            elif gate_name == "barrier" or gate_name == "measure":
+                continue
             else:
                 # 可以根据需要添加更多门的处理
                 raise ValueError(f"Unsupported gate type: {gate_name}")

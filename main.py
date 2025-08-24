@@ -31,14 +31,14 @@ def main(args):
     distributors.append(fgp)
     fgp.distribute()
 
-    # Pytket DQC
+    # Pytket DQC (CE)
     if args.gate_set == ["cu1", "u3"]:
         print("[Pytket_DQC (CE)]", file=sys.stderr)
         ce = Pytket_DQC(circ, qpus, "CE", network=args.network)
         distributors.append(ce)
         ce.distribute()
 
-    # Pytket DQC
+    # Pytket DQC (PA)
     if args.gate_set == ["cu1", "u3"]:
         print("[Pytket_DQC (PA)]", file=sys.stderr)
         pa = Pytket_DQC(circ, qpus, "PA", network=args.network)
